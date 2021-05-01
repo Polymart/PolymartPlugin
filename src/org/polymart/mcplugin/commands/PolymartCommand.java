@@ -3,17 +3,23 @@ package org.polymart.mcplugin.commands;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
+import org.bukkit.util.StringUtil;
 import org.polymart.mcplugin.Main;
 import org.polymart.mcplugin.actions.Login;
 import org.polymart.mcplugin.actions.Logout;
 import org.polymart.mcplugin.actions.Search;
 import org.polymart.mcplugin.api.PolymartAccount;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-public class PolymartCommand implements CommandExecutor {
+public class PolymartCommand implements TabExecutor {
 
+    public static final List<String> TABCOMPLETE_ARGUMENTS = Arrays.asList("help", "search", "account", "login", "logout", "version");
     private final Main polymartPlugin;
     private long confirmingLogout = 0;
 
@@ -75,4 +81,18 @@ public class PolymartCommand implements CommandExecutor {
         return false;
     }
 
+    private List<String> matchTabComplete(String arg, List<String> options) {
+        List<String> completions = new ArrayList<>();
+        StringUtil.copyPartialMatches(arg, options, completions);
+        Collections.sort(completions);
+        return completions;
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
+        if (args.length == 1) {
+            return matchTabComplete(args[0], TABCOMPLETE_ARGUMENTS);
+        }
+        return null;
+    }
 }
