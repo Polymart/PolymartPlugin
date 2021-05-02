@@ -32,16 +32,17 @@ public class Search implements Listener{
 
     public static final int PAGE_LENGTH = 45;
 
-    public static void search(Player p){
-        search(p, 0);
+    public static void search(Player p, String query){
+        search(p, query, 0);
     }
 
     private static Map<String, Resource> resources = new HashMap<>();
 
-    public static void search(Player p, int page){
+    public static void search(Player p, String query, int page){
         Map<String, Object> params = new HashMap<>();
         params.put("limit", PAGE_LENGTH);
         params.put("start", page * PAGE_LENGTH);
+        params.put("query", query);
         PolymartAPIHandler.post("search", params, (JSONWrapper json) -> {
             List<JSONWrapper> resourceList = json.get("result").asJSONWrapperList();
             List<ItemStack> items = new ArrayList<>();
@@ -53,7 +54,7 @@ public class Search implements Listener{
 
             ItemStack[] contents = items.toArray(new ItemStack[]{});
             Main.that.getServer().getScheduler().runTask(Main.that, () -> {
-                Inventory inv = Bukkit.createInventory(null, 54, "Polymart");
+                Inventory inv = Bukkit.createInventory(null, 54, ChatColor.DARK_RED + "[BETA] " + ChatColor.DARK_GRAY + "Polymart Search");
                 inv.setContents(contents);
                 p.openInventory(inv);
             });
@@ -86,6 +87,7 @@ public class Search implements Listener{
 
 
         String action = nbt.getString("org.polymart.mcplugin.action");
+        if(!action.equalsIgnoreCase("open_resource")){return;}
 
         String id = nbt.getString("org.polymart.mcplugin.resource_id");
         Resource r = resources.get(id);

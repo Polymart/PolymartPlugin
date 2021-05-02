@@ -30,8 +30,9 @@ public class Logout{
                 sendMessage(sender, "It looks like we weren't able to communicate with Polymart to log you out. Are you sure your server is connected to the internet and can access https://api.polymart.org?");
             }
             else{
-                Main.that.getConfig().set("account", null);
-                Main.that.saveConfig();
+                PolymartAccount.config.set("account", null);
+                PolymartAccount.config.set("unlinkReason", null);
+                PolymartAccount.save();
                 sendMessage(sender, "You have been logged out! To log back in, use /polymart login");
             }
         });

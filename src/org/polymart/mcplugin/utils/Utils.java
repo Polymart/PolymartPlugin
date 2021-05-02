@@ -48,12 +48,16 @@ public class Utils{
         return new String(hexChars);
     }
 
+    public static ItemStack newStack(Material m, String displayName){
+        return newStack(m, displayName, null, null);
+    }
+
     public static ItemStack newStack(Material m, String displayName, ChatColor loreColor, String lore){
         ItemStack is = new ItemStack(m);
         ItemMeta im = is.getItemMeta();
         im.setDisplayName(displayName);
         if(lore != null){
-            im.setLore(splitPreservingWordsAndColorCodes(lore, 24, loreColor));
+            im.setLore(splitPreservingWordsAndColorCodes(lore, 32, loreColor));
         }
         is.setItemMeta(im);
         return is;

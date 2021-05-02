@@ -1,12 +1,10 @@
 package org.polymart.mcplugin.utils;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class JSONWrapper{
 
@@ -86,27 +84,37 @@ public class JSONWrapper{
         return list;
     }
 
+    public boolean isNull(){
+        return this.value == null || this.value.isJsonNull();
+    }
+
     public String asString(){return this.asString(null);}
     public String asString(String defaultValue){
-        if(this.value != null && this.value.getAsString() != null){return this.value.getAsString();}
+        if(!isNull() && this.value.getAsString() != null){return this.value.getAsString();}
+        if(this.asInteger() != null){return Objects.toString(this.asInteger());}
         return defaultValue;
     }
 
     public Boolean asBoolean(){return this.asBoolean(null);}
     public Boolean asBoolean(Boolean defaultValue){
-        if(this.value != null){return this.value.getAsBoolean();}
+        if(!isNull()){return this.value.getAsBoolean();}
         return defaultValue;
     }
 
     public Integer asInteger(){return this.asInteger(null);}
     public Integer asInteger(Integer defaultValue){
-        if(this.value != null){return this.value.getAsInt();}
+        try{
+            if(!isNull()){
+                return this.value.getAsInt();
+            }
+        }
+        catch(Exception ignore){}
         return defaultValue;
     }
 
     public Float asFloat(){return this.asFloat(null);}
     public Float asFloat(Float defaultValue){
-        if(this.value != null){return (Float) this.value.getAsFloat();}
+        if(!isNull()){return (Float) this.value.getAsFloat();}
         return defaultValue;
     }
 
@@ -145,7 +153,7 @@ public class JSONWrapper{
 
     public List<JSONWrapper> asJSONWrapperList(){
         List<JSONWrapper> result = new ArrayList<>();
-        if(this.value.isJsonArray()){
+        if(this.value != null && this.value.isJsonArray()){
             JsonArray array = this.value.getAsJsonArray();
             array.forEach((JsonElement e) -> {
                 result.add(new JSONWrapper(e));

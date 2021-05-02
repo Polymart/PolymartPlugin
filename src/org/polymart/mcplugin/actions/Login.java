@@ -1,6 +1,7 @@
 package org.polymart.mcplugin.actions;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.polymart.mcplugin.Main;
@@ -32,7 +33,7 @@ public class Login{
         params.put("state", sender.getName());
         sendMessage(sender, "Getting everything ready for you...");
         PolymartAPIHandler.post("authorizeUser", params, (JSONWrapper json) -> {
-            System.out.println(json.get("success").json);
+            //System.out.println(json.get("success").json);
             if(json.get("success").asBoolean(false)){
                 String url = json.get("result").get("url").asString();
                 String token = json.get("result").get("token").asString();
@@ -41,20 +42,23 @@ public class Login{
                     sendMessage(sender, "To finish linking your Polymart account, visit " + url);
                 }
                 else{
-                    Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(),
-                            "/tellraw " + sender.getName() +
-                                    " {text:\"Click Here to finish linking your Polymart Account\",clickEvent:{action:open_url,value:\"" +
-                                    url + "\"}}"
-                    );
+                    sendMessage(sender, "Click here to finish linking your Polymart Account: " + ChatColor.YELLOW + url);
+
+//                    Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(),
+//                            "tellraw " + sender.getName() +
+//                                    " {text:\"Click Here to finish linking your Polymart Account\",clickEvent:{action:open_url,value:\"" +
+//                                    url + "\"}}"
+//                    );
                 }
 
                 PolymartAccount.checkForLink(token, (Object[] info) -> {
                     if(info != null){
                         sendMessage(sender, "Awesome! Your Polymart account has been successfully linked. Your Polymart account: https://polymart.org/user/" + info[0]);
-                        Main.that.getConfig().set("account.token.value", token);
-                        Main.that.getConfig().set("account.token.expires", info[1]);
-                        Main.that.getConfig().set("account.user.id", info[0]);
-                        Main.that.saveConfig();
+                        PolymartAccount.config.set("account.token.value", token);
+                        PolymartAccount.config.set("account.token.expires", info[1]);
+                        PolymartAccount.config.set("account.user.id", info[0]);
+                        PolymartAccount.config.set("unlinkReason", null);
+                        PolymartAccount.save();
                     }
                     else{
                         sendMessage(sender, "Uh-oh. It looks like something went wrong.");

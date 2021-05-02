@@ -3,9 +3,11 @@ package org.polymart.mcplugin.api;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.polymart.mcplugin.Main;
 import org.polymart.mcplugin.utils.JSONWrapper;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -17,6 +19,28 @@ This likely won't need to be modified much, at all
  */
 
 public class PolymartAccount{
+
+    public static YamlConfiguration config;
+    private static File file;
+
+    public static void setup(){
+        try{
+            file = new File(Main.that.getDataFolder(), "account.yml");
+            if(!file.exists()){
+                file.createNewFile();
+            }
+
+            config = YamlConfiguration.loadConfiguration(file);
+        }
+        catch(Exception ex){ex.printStackTrace();}
+    }
+
+    public static void save(){
+        try{
+            config.save(file);
+        }
+        catch(Exception ignore){}
+    }
 
     public static void checkForLink(String token, Consumer<Object[]> confirmed, int tries){
         if(tries > 30){
@@ -44,15 +68,15 @@ public class PolymartAccount{
     }
 
     public static boolean hasToken(){
-        int expires = Main.that.getConfig().getInt("account.token.expires");
+        int expires = config.getInt("account.token.expires");
         return getToken() != null && expires > (System.currentTimeMillis() / 1000);
     }
 
     public static String getToken(){
-        return Main.that.getConfig().getString("account.token.value");
+        return config.getString("account.token.value");
     }
 
     public static String getUserID(){
-        return Main.that.getConfig().getString("account.user.id");
+        return config.getString("account.user.id");
     }
 }

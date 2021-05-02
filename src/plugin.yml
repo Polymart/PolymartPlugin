@@ -1,12 +1,14 @@
 main: org.polymart.mcplugin.Main
 name: Polymart
-version: "1.0"
+version: "1.1"
 api-version: "1.13"
 author: Polymart
 website: https://polymart.org
-
 commands:
   polymart:
     description: Polymart commands
-    usage: /polymart help
-    aliases: [pmrt]
+    usage: /polymart <update/search/login/logout/account/version/help>
+    aliases: [pmt, pmrt]
+  update:
+    description: Update your plugins with Polymart
+    usage: /update [plugin 1] [plugin 2] [plugin 3] [...]
