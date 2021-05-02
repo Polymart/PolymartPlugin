@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.StringJoiner;
 import java.util.function.Consumer;
 
+import static org.polymart.mcplugin.commands.MessageUtils.sendMessage;
+
 /**
 This likely won't need to be modified much, at all
  */
@@ -154,7 +156,7 @@ public class PolymartAPIHandler{
         if(actions == null){return;}
 
         if(actions.get("sendMessage").asString() != null){
-            Main.sendMessage(sender, ChatColor.translateAlternateColorCodes('&', actions.get("sendMessage").asString()));
+            sendMessage(sender, ChatColor.translateAlternateColorCodes('&', actions.get("sendMessage").asString()));
         }
         if(actions.get("logout").asBoolean(false)){
             PolymartAccount.config.set("account", null);

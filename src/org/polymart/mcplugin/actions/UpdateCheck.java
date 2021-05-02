@@ -34,7 +34,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
-import static org.polymart.mcplugin.Main.sendMessage;
+import static org.polymart.mcplugin.commands.MessageUtils.sendMessage;
 
 public class UpdateCheck implements Listener{
 
