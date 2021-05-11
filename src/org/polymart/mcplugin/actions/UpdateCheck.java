@@ -167,7 +167,7 @@ public class UpdateCheck implements Listener{
             return;
         }
 
-        if(alreadyDownloaded.getOrDefault(name, 0) >= update || currentlyDownloading.contains(name)){
+        if(alreadyDownloaded.getOrDefault(name, Integer.MIN_VALUE) >= update || currentlyDownloading.contains(name)){
             finished.accept(true);
             return;
         }
@@ -243,7 +243,7 @@ public class UpdateCheck implements Listener{
                     r.get("resource").get("transferURL").asString(),
                     r.get("uploads").get("latest").get("download").get("url").asString(),
                     r.get("uploads").get("latest").get("description").asString(),
-                    r.get("uploads").get("latest").get("id").asInteger(0),
+                    r.get("uploads").get("latest").get("id").asInteger(-1),
                     r.get("behind").asInteger(0)
             );
 

@@ -12,7 +12,7 @@ import org.polymart.mcplugin.utils.JSONWrapper;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.polymart.mcplugin.Main.sendMessage;
+import static org.polymart.mcplugin.commands.MessageUtils.sendMessage;
 
 /**
  * This likely won't need to be modified at all

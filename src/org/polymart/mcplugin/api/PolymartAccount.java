@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static org.polymart.mcplugin.Main.sendMessage;
+import static org.polymart.mcplugin.commands.MessageUtils.sendMessage;
 
 /**
 This likely won't need to be modified much, at all

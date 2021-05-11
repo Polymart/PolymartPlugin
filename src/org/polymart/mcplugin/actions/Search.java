@@ -19,6 +19,7 @@ import org.polymart.mcplugin.utils.Utils;
 import java.util.*;
 
 import static org.polymart.mcplugin.Main.*;
+import static org.polymart.mcplugin.commands.MessageUtils.sendMessage;
 
 /**
 Action for searching resources — open the inventory with Search.search(player)
