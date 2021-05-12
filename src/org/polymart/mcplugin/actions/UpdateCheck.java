@@ -94,7 +94,7 @@ public class UpdateCheck implements Listener{
 
         for(Plugin pl : Bukkit.getPluginManager().getPlugins()){
             try{
-                oldVersions.put(pl.getDescription().getName(), pl.getDescription().getVersion());
+                oldVersions.put(pl.getDescription().getName().toLowerCase(), pl.getDescription().getVersion());
 
                 URL url = pl.getClass().getProtectionDomain().getCodeSource().getLocation();
                 File f = new File(URLDecoder.decode(url.getFile(), "UTF8"));
@@ -106,6 +106,8 @@ public class UpdateCheck implements Listener{
                 i.put("name", pl.getDescription().getName());
                 i.put("version", pl.getDescription().getVersion());
                 i.put("source", "UNKNOWN");
+
+                jarFileNames.put(pl.getDescription().getName().toLowerCase(), f.getName());
 
                 if(ze == null){
                     resources.add(i);
@@ -159,6 +161,7 @@ public class UpdateCheck implements Listener{
     }
 
     public static Map<String, Integer> alreadyDownloaded = new HashMap<>();
+    private static Map<String, String> jarFileNames = new HashMap<>();
     public static List<String> currentlyDownloading = new ArrayList<>();
 
     public static void download(String name, String url, int update, Consumer<Boolean> finished){
@@ -182,7 +185,8 @@ public class UpdateCheck implements Listener{
 
                 URL website = new URL(url);
                 ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-                FileOutputStream fos = new FileOutputStream(new File(saveDir, name + ".jar"));
+                String fn = jarFileNames.get(name.toLowerCase());
+                FileOutputStream fos = new FileOutputStream(new File(saveDir, fn));
                 fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 
                 success = true;
@@ -397,7 +401,7 @@ public class UpdateCheck implements Listener{
                     r.download,
                     r.uploadID,
                     (Boolean b) -> {
-                        String oldVersion = oldVersions.get(r.name);
+                        String oldVersion = oldVersions.get(r.name.toLowerCase());
                         int cv = counter.add();
 
                         if(b){
@@ -468,7 +472,7 @@ public class UpdateCheck implements Listener{
         String bs = ChatColor.WHITE + " (" + ui.behind + " behind)";
         String itemName = willUpdate ? ChatColor.AQUA + ui.name + bs : ChatColor.GOLD + ui.name + bs;
 
-        String lore = ChatColor.YELLOW + ui.version + ChatColor.WHITE + " -> " + ChatColor.GREEN + ui.version + "\n";
+        String lore = ChatColor.YELLOW + oldVersions.get(ui.name.toLowerCase()) + ChatColor.WHITE + " -> " + ChatColor.GREEN + ui.version + "\n";
         String udle = ui.description != null && ui.description.length() > 200 ? "..." : "";
         lore+=(ui.description == null || ui.description.length() < 3 ? "" : ChatColor.GRAY + ui.description.substring(0, Math.min(ui.description.length(), 200)).replaceAll("\\s+", " ").replaceAll("\\s+$", "") + udle);
         lore+="\n\n" + ChatColor.GRAY.toString() + ChatColor.ITALIC + (!willUpdate ? ChatColor.WHITE + "(click to update)" : "(click to cancel update)");
