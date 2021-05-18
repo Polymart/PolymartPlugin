@@ -26,6 +26,10 @@ public class TextFormatter{
         return this.append(in);
     }
 
+    public TextFormatter appendClickableWithCommand(String in, String command){
+        return this.append(in);
+    }
+
     public int length(){
         return s.length();
     }

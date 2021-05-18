@@ -179,7 +179,7 @@ public class UpdateCheck implements Listener{
         Main.that.getServer().getScheduler().runTaskAsynchronously(Main.that, () -> {
             boolean success = false;
             try{
-                File saveDir = new File(Main.that.getDataFolder().getParent(), "update");
+                File saveDir = Bukkit.getUpdateFolderFile();
                 //File saveDir = new File(Main.that.getDataFolder(), "updater" + File.separator + "downloads");
                 saveDir.mkdirs();
 

@@ -16,6 +16,7 @@ import org.polymart.mcplugin.actions.UpdateCheck;
 import org.polymart.mcplugin.api.PolymartAccount;
 import org.polymart.mcplugin.commands.PolymartCommand;
 import org.polymart.mcplugin.commands.UpdateCommand;
+import org.polymart.mcplugin.server.UploadServerInfo;
 
 import java.util.*;
 
@@ -36,6 +37,7 @@ public class Main extends JavaPlugin implements Listener{
 
         Search.setup();
         UpdateCheck.setup();
+        UploadServerInfo.setup();
 
         this.getCommand("polymart").setExecutor(new PolymartCommand());
         this.getCommand("update").setExecutor(new UpdateCommand());

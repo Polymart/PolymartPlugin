@@ -11,20 +11,25 @@ import org.polymart.mcplugin.Main;
 import org.polymart.mcplugin.actions.Login;
 import org.polymart.mcplugin.actions.Logout;
 import org.polymart.mcplugin.actions.Search;
+import org.polymart.mcplugin.api.PolymartAPIHandler;
 import org.polymart.mcplugin.api.PolymartAccount;
+import org.polymart.mcplugin.server.UploadServerInfo;
+import org.polymart.mcplugin.text.TextFormatter;
+import org.polymart.mcplugin.utils.JSONWrapper;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static org.polymart.mcplugin.commands.MessageUtils.*;
 
 public class PolymartCommand implements TabExecutor {
 
-    public static final List<String> TABCOMPLETE_ARGUMENTS = Arrays.asList("help", "search", "account", "login", "logout", "version", "update");
+    public static final List<String> TABCOMPLETE_ARGUMENTS = Arrays.asList("help", "search", "account", "login", "logout", "version", "update", "server");
     private long confirmingLogout = 0;
 
+
+    private static List<String> alreadyLinkedElswhere = new ArrayList<>();
+    private boolean linkingServer = false;
+    private static String confirmingLinkServer;
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){
         if(cmd.getName().equalsIgnoreCase("polymart")){
             if(args.length == 0 || args[0].toLowerCase().matches("^(web|website|info|version|ver)$")){
@@ -81,6 +86,72 @@ public class PolymartCommand implements TabExecutor {
                     else{
                         confirmingLogout = System.currentTimeMillis() + 10_000;
                         sendMessage(sender, "Are you sure you want to log out? To confirm, type /polymart logout. This will expire in 10 seconds.");
+                    }
+                }
+            }
+            else if(args[0].equalsIgnoreCase("server")){
+                if(verifyPermission(sender, "polymart.admin") && verifyAccount(sender)){
+                    if(!PolymartAccount.serverLinked()){
+                        if(linkingServer && args.length >= 3 && args[1].equalsIgnoreCase("link") && args[2].length() > 0){
+                            if(alreadyLinkedElswhere.contains(args[2]) && (args.length < 4 || !args[3].equalsIgnoreCase("overwrite"))){
+                                sendErrorMessage(sender, "This listing is already linked with another server. Linking it here will remove it from your other server. Are you sure you want to do this? To confirm, type " + ChatColor.YELLOW + "/polymart server link " + args[2] + " overwrite");
+                            }
+                            else{
+                                sendMessage(sender, "Linking this server with your Polymart listing (polymart.org/server/" + args[2] + ")...");
+                                Map<String, Object> map = new HashMap<>();
+                                map.put("serverID", args[2]);
+                                PolymartAPIHandler.post("linkServerInGame", map, (JSONWrapper json) -> {
+                                    if(json.get("success").asBoolean(false)){
+                                        PolymartAccount.setServer(
+                                            json.get("server").get("id").asString(),
+                                            json.get("server").get("token").asString()
+                                        );
+
+                                        sendMessage(sender, "Success! This server has been linked with your Polymart listing " + ChatColor.GREEN + "polymart.org/server/" + args[2]);
+                                        UploadServerInfo.upload();
+                                    }
+                                    else{
+                                        sendErrorMessage(sender, "It looks like something went wrong trying to link the server!");
+                                    }
+                                });
+                                linkingServer = false;
+                            }
+                            return true;
+                        }
+                        sendMessage(sender, "Let's link your server with Polymart! Loading the servers you have listed on Polymart...");
+                        PolymartAPIHandler.post("getUserServers", new HashMap<>(), (JSONWrapper json) -> {
+                            List<JSONWrapper> l = json.get("servers").asJSONWrapperList();
+                            if(l == null || l.size() < 1){
+                                sendMessage(sender,"It looks like you haven't listed any servers on Polymart yet. Let's start with that! To list add your server, go to " + ChatColor.BLUE + "https://polymart.org/server/new" + ChatColor.AQUA + ". When you've added your server, come back here and type " + ChatColor.BLUE + "/polymart server");
+                            }
+                            else{
+                                boolean player = sender instanceof Player;
+                                sendMessage(sender, "Link your server to improve your experience on Polymart, access new features on your server listing, and to get more players! Polymart will periodically be sent info like the online players, the plugins you use, and other info and stats about your server.");
+                                sendMessage(sender, "You have the following servers listed on your Polymart account." + (player ? "Click the listing that you'd like to link this server with:" : ""));
+                                TextFormatter f = TextFormatter.make();
+                                linkingServer = true;
+                                for(JSONWrapper w : l){
+                                    f.append(ChatColor.GRAY + "  - ");
+                                    boolean linked = w.get("linked").asBoolean(false);
+                                    ChatColor color = linked ? ChatColor.DARK_RED : ChatColor.AQUA;
+                                    String str = color + w.get("name").asString();
+                                    if(linked){
+                                        str = str + ChatColor.RED + " [Already Linked Elsewhere]";
+                                    }
+                                    if(player){
+                                        f.appendClickableWithCommand(str, "polymart server link " + w.get("id").asString());
+                                    }
+                                    else{
+                                        f.append(str + " " + ChatColor.GRAY + "- link with /polymart server link " + w.get("id").asString());
+                                    }
+                                    f.append(ChatColor.GRAY + "\n");
+                                }
+                                f.send(sender);
+                            }
+                        });
+                    }
+                    else{
+                        sendMessage(sender, "This server is linked with Polymart at " + ChatColor.BLUE + "https://polymart.org/server/" + PolymartAccount.getServerID());
                     }
                 }
             }

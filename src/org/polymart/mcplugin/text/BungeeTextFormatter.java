@@ -23,6 +23,14 @@ public class BungeeTextFormatter extends TextFormatter{
         return this;
     }
 
+    public BungeeTextFormatter appendClickableWithCommand(String in, String command){
+        if(command == null || command.length() == 0){return append(in);}
+        TextComponent message = new TextComponent(in);
+        message.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, command));
+        s.addExtra(message);
+        return this;
+    }
+
 
     @Override
     public String toString(){

@@ -12,6 +12,8 @@ import org.bukkit.command.CommandSender;
 import org.polymart.mcplugin.Main;
 import org.polymart.mcplugin.utils.JSONWrapper;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -19,9 +21,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.StringJoiner;
+import java.util.*;
 import java.util.function.Consumer;
 
 import static org.polymart.mcplugin.commands.MessageUtils.sendMessage;
@@ -81,6 +81,8 @@ public class PolymartAPIHandler{
         }
     }
 
+    private static final byte[] RANDOM_BYTES = new byte[32];
+    private static final Random RANDOM = new Random();
     private static void doMakeCall(String action, Map<String, Object> parameters, Consumer<JSONWrapper> response, String method, CommandSender sender){
         final String url = "https://api.polymart.org/v1/" + action;
 
@@ -97,7 +99,13 @@ public class PolymartAPIHandler{
         Map<String, Object> server = new HashMap<>();
         server.put("ip", Bukkit.getServer().getIp());
         server.put("port", Bukkit.getServer().getPort());
+        server.put("id", PolymartAccount.getServerID());
         session.put("server", server);
+
+        Map<String, Object> plugin = new HashMap<>();
+        plugin.put("version", Main.that.getDescription().getVersion());
+        plugin.put("downloader", "%%__USER__%%");
+        session.put("plugin", plugin);
 
         parameters.put("session", session);
 
@@ -111,7 +119,7 @@ public class PolymartAPIHandler{
                 http.setRequestMethod(method); // PUT is another valid option
                 http.setDoOutput(true);
 
-                Gson gson = new GsonBuilder().create();
+                Gson gson = new GsonBuilder().disableHtmlEscaping().create();
                 String sj = gson.toJson(parameters);
 
 //                StringJoiner sj = new StringJoiner("&");
@@ -123,6 +131,24 @@ public class PolymartAPIHandler{
 
                 http.setFixedLengthStreamingMode(length);
                 http.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+
+                RANDOM.nextBytes(RANDOM_BYTES);
+                String nonce = encodeBase64(RANDOM_BYTES);
+
+                String key = "%%__POLYMART.SIGNATURE_KEY__%%" + PolymartAccount.getServerToken();
+                Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
+                SecretKeySpec secret_key = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+                sha256_HMAC.init(secret_key);
+
+                String nonced = sj + nonce;
+                String signature = encodeBase64(sha256_HMAC.doFinal(nonced.getBytes(StandardCharsets.UTF_8)));
+
+                http.setRequestProperty("X-Polymart-Nonce", nonce);
+                http.setRequestProperty("X-Polymart-Signature", signature);
+                http.setRequestProperty("X-Polymart-Server-ID", PolymartAccount.getServerID());
+                http.setRequestProperty("X-Polymart-Key-ID", "%%__POLYMART.KEY_ID__%%");
+                http.setRequestProperty("X-Polymart-Version", Main.that.getDescription().getVersion());
+
                 http.connect();
                 OutputStream os = http.getOutputStream();
                 os.write(out);
@@ -152,6 +178,14 @@ public class PolymartAPIHandler{
         });
     }
 
+    public static String encodeBase64(String s){
+        return encodeBase64(s.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public static String encodeBase64(byte[] b){
+        return new String(Base64.getUrlEncoder().encode(b)).replace("=", "");
+    }
+
     public static void runActions(JSONWrapper actions, CommandSender sender){
         if(actions == null){return;}
 
@@ -161,6 +195,10 @@ public class PolymartAPIHandler{
         if(actions.get("logout").asBoolean(false)){
             PolymartAccount.config.set("account", null);
             PolymartAccount.config.set("unlinkReason", "IP_BAD");
+            PolymartAccount.save();
+        }
+        if(actions.get("unlinkServer").asBoolean(false)){
+            PolymartAccount.config.set("server", null);
             PolymartAccount.save();
         }
     }

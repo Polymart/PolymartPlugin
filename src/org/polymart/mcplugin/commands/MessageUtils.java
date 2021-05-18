@@ -31,4 +31,7 @@ public class MessageUtils{
         sender.sendMessage(ChatColor.DARK_AQUA + "Polymart" + ChatColor.AQUA + ChatColor.BOLD + "> " + ChatColor.WHITE + message);
     }
 
+    public static void sendErrorMessage(CommandSender sender, String message){
+        sender.sendMessage(ChatColor.DARK_RED + "Polymart" + ChatColor.RED + ChatColor.BOLD + "> " + ChatColor.WHITE + message);
+    }
 }

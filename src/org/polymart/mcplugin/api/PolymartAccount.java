@@ -42,6 +42,24 @@ public class PolymartAccount{
         catch(Exception ignore){}
     }
 
+    public static String getServerID(){
+        return config.getString("server.id");
+    }
+
+    public static String getServerToken(){
+        return config.getString("server.token");
+    }
+
+    public static void setServer(String id, String token){
+        config.set("server.id", id);
+        config.set("server.token", token);
+        save();
+    }
+
+    public static boolean serverLinked(){
+        return config.contains("server.id") && config.contains("server.token");
+    }
+
     public static void checkForLink(String token, Consumer<Object[]> confirmed, int tries){
         if(tries > 30){
             confirmed.accept(null);
