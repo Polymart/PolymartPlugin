@@ -1,6 +1,7 @@
 package org.polymart.mcplugin.utils.nbt;
 
 import org.bukkit.Bukkit;
+import org.polymart.mcplugin.utils.ServerVersion;
 
 import java.lang.reflect.Constructor;
 
@@ -26,7 +27,12 @@ public enum SafeNBTBaseType{
         try{
             this.innerClazz = innerClazz;
             String version = "net.minecraft.server." + Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
-            this.nbtBaseClass = Class.forName(version + ".NBTTag" + name);
+            if(ServerVersion.greaterOrEqual(1, 17)){
+                this.nbtBaseClass = Class.forName("net.minecraft.nbt.NBTBase");
+            }
+            else{
+                this.nbtBaseClass = Class.forName(version + ".NBTTag" + name);
+            }
             this.name = name;
         }
         catch(Exception ex){ex.printStackTrace();}

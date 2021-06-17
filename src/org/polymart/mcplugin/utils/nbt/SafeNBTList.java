@@ -21,8 +21,14 @@ public class SafeNBTList{
 
     static{
         try{
-            tagListClass = Class.forName(version + ".NBTTagList");
-            nbtBaseClass = Class.forName(version + ".NBTBase");
+            if(ServerVersion.greaterOrEqual(1, 17)){
+                tagListClass = Class.forName("net.minecraft.nbt.NBTTagList");
+                nbtBaseClass = Class.forName("net.minecraft.nbt.NBTBase");
+            }
+            else{
+                tagListClass = Class.forName(version + ".NBTTagList");
+                nbtBaseClass = Class.forName(version + ".NBTBase");
+            }
 
             for(Method m : tagListClass.getDeclaredMethods()){
                 if(m.getReturnType().equals(Void.TYPE) || m.getParameterCount() != 1 || !m.getParameterTypes()[0].equals(int.class)){continue;}

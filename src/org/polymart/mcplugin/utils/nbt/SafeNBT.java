@@ -3,6 +3,7 @@ package org.polymart.mcplugin.utils.nbt;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 import org.polymart.mcplugin.Main;
+import org.polymart.mcplugin.utils.ServerVersion;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -22,11 +23,19 @@ public class SafeNBT{
 
     static{
         try{
-            tagCompoundClass = Class.forName(version + ".NBTTagCompound");
-            nbtBaseClass = Class.forName(version + ".NBTBase");
-            nmsItemstackClass = Class.forName(version + ".ItemStack");
+            if(ServerVersion.greaterOrEqual(1, 17)){
+                tagCompoundClass = Class.forName("net.minecraft.nbt.NBTTagCompound");
+                nbtBaseClass = Class.forName("net.minecraft.nbt.NBTBase");
+                nmsItemstackClass = Class.forName("net.minecraft.world.item.ItemStack");
+                mojangsonParserClass = Class.forName("net.minecraft.nbt.MojangsonParser");
+            }
+            else{
+                tagCompoundClass = Class.forName(version + ".NBTTagCompound");
+                nbtBaseClass = Class.forName(version + ".NBTBase");
+                nmsItemstackClass = Class.forName(version + ".ItemStack");
+                mojangsonParserClass = Class.forName(version + ".MojangsonParser");
+            }
             craftItemstackClass = Class.forName(cbVersion + ".inventory.CraftItemStack");
-            mojangsonParserClass = Class.forName(version + ".MojangsonParser");
         }
         catch(Exception ex){
             ex.printStackTrace();
@@ -440,10 +449,30 @@ public class SafeNBT{
 
     public Set<String> getKeys(){
         try{
-            Field f = tagCompoundClass.getDeclaredField("map");
-            f.setAccessible(true);
-            Map m = (Map) f.get(tagCompund);
-            f.setAccessible(false);
+            Map m = null;
+            if(ServerVersion.greaterOrEqual(1, 17)){
+                try{
+                    Field f = tagCompoundClass.getDeclaredField("x");
+                    f.setAccessible(true);
+                    m = (Map) f.get(tagCompund);
+                    f.setAccessible(false);
+                }
+                catch(Exception ignore){}
+                for(Field f : tagCompoundClass.getDeclaredFields()){
+                    if(f.getType() == Map.class){
+                        f.setAccessible(true);
+                        m = (Map) f.get(tagCompund);
+                        f.setAccessible(false);
+                        break;
+                    }
+                }
+            }
+            else{
+                Field f = tagCompoundClass.getDeclaredField("map");
+                f.setAccessible(true);
+                m = (Map) f.get(tagCompund);
+                f.setAccessible(false);
+            }
 
             return (Set<String>) m.keySet();
         }

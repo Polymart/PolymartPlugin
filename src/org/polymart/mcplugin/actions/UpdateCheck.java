@@ -2,7 +2,6 @@ package org.polymart.mcplugin.actions;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.Hash;
@@ -21,6 +20,7 @@ import org.polymart.mcplugin.api.PolymartAccount;
 import org.polymart.mcplugin.text.TextFormatter;
 import org.polymart.mcplugin.utils.JSONWrapper;
 import org.polymart.mcplugin.utils.Utils;
+import org.polymart.mcplugin.utils.XMaterial;
 import org.polymart.mcplugin.utils.nbt.SafeNBT;
 
 import java.io.*;
@@ -437,9 +437,9 @@ public class UpdateCheck implements Listener{
         size = Math.min(size + 9, 54);
         Inventory inv = Bukkit.createInventory(null, size, "Polymart Plugin Updates");
 
-        inv.setItem(0, makeItemStack(Material.BARRIER, ChatColor.RED + "Close", "cancel_all_updates", ChatColor.DARK_RED + "Without updating any plugins"));
-        //inv.setItem(1, makeItemStack(Material.BLUE_STAINED_GLASS_PANE, ChatColor.BLUE + "Stage ", "set_all_staged"));
-        inv.setItem(8, makeItemStack(Material.COMMAND_BLOCK, ChatColor.GREEN + "Update Selected Plugins", "do_updates"));
+        inv.setItem(0, makeItemStack(XMaterial.BARRIER, ChatColor.RED + "Close", "cancel_all_updates", ChatColor.DARK_RED + "Without updating any plugins"));
+        //inv.setItem(1, makeItemStack(XMaterial.BLUE_STAINED_GLASS_PANE, ChatColor.BLUE + "Stage ", "set_all_staged"));
+        inv.setItem(8, makeItemStack(XMaterial.COMMAND_BLOCK, ChatColor.GREEN + "Update Selected Plugins", "do_updates"));
 
         int slot = 9;
         for(UpdateInfo ui : updateable.values()){
@@ -456,11 +456,11 @@ public class UpdateCheck implements Listener{
         p.openInventory(inv);
     }
 
-    public static ItemStack makeItemStack(Material material, String name, String action){
+    public static ItemStack makeItemStack(XMaterial material, String name, String action){
         return makeItemStack(material, name, action, null);
     }
 
-    public static ItemStack makeItemStack(Material material, String name, String action, String lore){
+    public static ItemStack makeItemStack(XMaterial material, String name, String action, String lore){
         ItemStack stack = Utils.newStack(material, name, ChatColor.WHITE, lore);
         SafeNBT nbt = SafeNBT.get(stack);
         nbt.setBoolean("org.polymart.mcplugin.watch", true);
@@ -476,7 +476,7 @@ public class UpdateCheck implements Listener{
         String udle = ui.description != null && ui.description.length() > 200 ? "..." : "";
         lore+=(ui.description == null || ui.description.length() < 3 ? "" : ChatColor.GRAY + ui.description.substring(0, Math.min(ui.description.length(), 200)).replaceAll("\\s+", " ").replaceAll("\\s+$", "") + udle);
         lore+="\n\n" + ChatColor.GRAY.toString() + ChatColor.ITALIC + (!willUpdate ? ChatColor.WHITE + "(click to update)" : "(click to cancel update)");
-        ItemStack stack = Utils.newStack(willUpdate ? Material.CYAN_WOOL : Material.ORANGE_WOOL, itemName, ChatColor.GRAY, lore);
+        ItemStack stack = Utils.newStack(willUpdate ? XMaterial.CYAN_WOOL : XMaterial.ORANGE_WOOL, itemName, ChatColor.GRAY, lore);
         SafeNBT nbt = SafeNBT.get(stack);
         nbt.setBoolean("org.polymart.mcplugin.watch", true);
         nbt.setString("org.polymart.mcplugin.action", "stage_for_update");

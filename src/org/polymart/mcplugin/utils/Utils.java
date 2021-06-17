@@ -1,7 +1,6 @@
 package org.polymart.mcplugin.utils;
 
 import org.bukkit.ChatColor;
-import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.polymart.mcplugin.utils.nbt.SafeNBT;
@@ -48,12 +47,12 @@ public class Utils{
         return new String(hexChars);
     }
 
-    public static ItemStack newStack(Material m, String displayName){
+    public static ItemStack newStack(XMaterial m, String displayName){
         return newStack(m, displayName, null, null);
     }
 
-    public static ItemStack newStack(Material m, String displayName, ChatColor loreColor, String lore){
-        ItemStack is = new ItemStack(m);
+    public static ItemStack newStack(XMaterial m, String displayName, ChatColor loreColor, String lore){
+        ItemStack is = m.parseItem();
         ItemMeta im = is.getItemMeta();
         im.setDisplayName(displayName);
         if(lore != null){
@@ -63,7 +62,7 @@ public class Utils{
         return is;
     }
 
-    public static ItemStack newActionStack(Material m, String displayName, ChatColor loreColor, String lore, String action){
+    public static ItemStack newActionStack(XMaterial m, String displayName, ChatColor loreColor, String lore, String action){
         ItemStack is = newStack(m, displayName, loreColor, lore);
         SafeNBT nbt = SafeNBT.get(is);
         nbt.setBoolean("org.polymart.mcplugin.watch", true);
