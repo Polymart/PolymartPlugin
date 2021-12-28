@@ -164,8 +164,13 @@ public class PolymartAPIHandler{
                 }
                 in.close();
 
+                if(Main.that.getConfig().getBoolean("debug", false)){
+                    System.out.println(stringResp);
+                }
+
                 JsonParser parser = new JsonParser();
                 json = (JsonObject) parser.parse(stringResp.toString());
+
             }
             catch(Exception ex){
                 ex.printStackTrace();

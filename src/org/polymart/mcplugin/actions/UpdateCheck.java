@@ -3,15 +3,20 @@ package org.polymart.mcplugin.actions;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.Hash;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.util.Consumer;
 import org.polymart.mcplugin.Main;
 import org.polymart.mcplugin.Resource;
@@ -28,18 +33,40 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import static org.polymart.mcplugin.commands.MessageUtils.sendMessage;
 
 public class UpdateCheck implements Listener{
 
+    private static File namesToUpdateFile;
+    private static YamlConfiguration namesToUpdateYML;
+    private static List<String> pluginsWithUpdatedNames = new ArrayList<>();
+    private static boolean didUpdateFileNames = false;
+
     public static void setup(){
         Main.that.getServer().getPluginManager().registerEvents(new UpdateCheck(), Main.that);
+
+        namesToUpdateFile = new File(Main.that.getDataFolder(), "updates.yml");
+        namesToUpdateYML = YamlConfiguration.loadConfiguration(namesToUpdateFile);
+
+        deleteHelperJars();
+    }
+
+    private static void deleteHelperJars(){
+        File helperFile = new File(Main.that.getDataFolder().getParentFile(), "PolymartHelper.jar");
+        if(helperFile.exists()){helperFile.delete();}
+
+        File helperFileTemp = new File(Main.that.getDataFolder().getParentFile(), "PolymartHelperTemp.jar");
+        if(helperFileTemp.exists()){helperFileTemp.delete();}
     }
 
     private static Map<String, String> UPDATES_DONE = new HashMap<>();
@@ -72,6 +99,79 @@ public class UpdateCheck implements Listener{
         catch(IOException ex){
             ex.printStackTrace();
         }
+
+        // Load PolymartHelper.jar to rename .jar files. This is kind of an involved process
+        if(didUpdateFileNames){
+            try{
+                if(!namesToUpdateFile.exists()){namesToUpdateFile.createNewFile();}
+                namesToUpdateYML.save(namesToUpdateFile);
+
+                String jn = new File(Main.class.getProtectionDomain()
+                        .getCodeSource()
+                        .getLocation()
+                        .getPath()).getName();
+                jn = jn.replaceAll("%20", " ");
+                JarFile jf = new JarFile(new File(Main.that.getDataFolder().getParentFile(), jn));
+                ZipEntry je = jf.getEntry("resources/PolymartHelper.jar");
+
+                InputStream is = jf.getInputStream(je);
+
+                File helperFileTemp = new File(Main.that.getDataFolder().getParentFile(), "PolymartHelperTemp.jar");
+                if(!helperFileTemp.exists()){helperFileTemp.createNewFile();}
+                int readBytes;
+                byte[] buffer = new byte[4096];
+                FileOutputStream os = new FileOutputStream(helperFileTemp);
+
+                while((readBytes = is.read(buffer)) > 0){
+                    os.write(buffer, 0, readBytes);
+                }
+
+                File helperFile = new File(Main.that.getDataFolder().getParentFile(), "PolymartHelper.jar");
+                ZipFile helperZip = new ZipFile(helperFileTemp);
+                ZipEntry helperPluginYamlEntry = helperZip.getEntry("plugin.yml");
+
+                pluginsWithUpdatedNames.add(Main.that.getName());
+                YamlConfiguration helperPluginYaml = loadConfig(helperZip, helperPluginYamlEntry);
+                helperPluginYaml.set("loadbefore", new ArrayList<>(new HashSet<>(pluginsWithUpdatedNames))); // remove duplicates
+                String helperPluginYamlString = helperPluginYaml.saveToString();
+
+                ZipOutputStream out = new ZipOutputStream(new FileOutputStream(helperFile));
+                Enumeration<? extends ZipEntry> entries = helperZip.entries();
+                ByteArrayOutputStream bao = new ByteArrayOutputStream();
+
+                while(entries.hasMoreElements()){
+                    ZipEntry e = entries.nextElement();
+                    out.putNextEntry(e);
+
+                    if(e.getName().equals("plugin.yml")){
+                        out.write(helperPluginYamlString.getBytes(StandardCharsets.UTF_8));
+                    }
+                    else{
+                        InputStream iso = helperZip.getInputStream(e);
+
+                        int read;
+                        bao.reset();
+                        while((read = iso.read(BUFFER, 0, 1024)) >= 0){
+                            bao.write(BUFFER, 0, read);
+                        }
+
+                        out.write(bao.toByteArray());
+                    }
+                    out.closeEntry();
+                }
+
+                out.close();
+                helperFileTemp.delete();
+            }
+            catch(Exception ex){
+                ex.printStackTrace();
+            }
+        }
+        else{
+            if(namesToUpdateFile.exists()){namesToUpdateFile.delete();}
+
+            deleteHelperJars();
+        }
     }
 
     public static boolean DO_AUTO_UPDATES = true;
@@ -83,11 +183,28 @@ public class UpdateCheck implements Listener{
         lastCheckedForUpdates = System.currentTimeMillis();
     }
 
+    private static final StringBuilder LOAD_CONFIG_STRING = new StringBuilder();
+    private static byte[] BUFFER = new byte[1024];
+    public static String loadToString(ZipFile zf, ZipEntry ze) throws IOException{
+        InputStream is = zf.getInputStream(ze);
+        int read;
+
+        LOAD_CONFIG_STRING.setLength(0);
+        while((read = is.read(BUFFER, 0, 1024)) >= 0){
+            LOAD_CONFIG_STRING.append(new String(BUFFER, 0, read));
+        }
+
+        return LOAD_CONFIG_STRING.toString();
+    }
+
+    public static YamlConfiguration loadConfig(ZipFile zf, ZipEntry ze) throws IOException, InvalidConfigurationException{
+        YamlConfiguration info = new YamlConfiguration();
+        info.loadFromString(loadToString(zf, ze));
+        return info;
+    }
+
     public static void run(CommandSender sender, String[] toUpdate){
         sender.sendMessage(ChatColor.DARK_AQUA + "Polymart" + ChatColor.AQUA + ChatColor.BOLD + ">" + ChatColor.WHITE + " Checking for updates...");
-
-        byte[] buffer = new byte[1024];
-        StringBuilder s = new StringBuilder();
 
         List<Map<String, Object>> resources = new ArrayList<>();
         Map<String, String> oldVersions = new HashMap<>();
@@ -115,16 +232,7 @@ public class UpdateCheck implements Listener{
                 }
 
                 try{
-                    InputStream is = zf.getInputStream(ze);
-                    int read;
-
-                    s.setLength(0);
-                    while((read = is.read(buffer, 0, 1024)) >= 0){
-                        s.append(new String(buffer, 0, read));
-                    }
-
-                    YamlConfiguration info = new YamlConfiguration();
-                    info.loadFromString(s.toString());
+                    YamlConfiguration info = loadConfig(zf, ze);
 
                     if(info.get("polymart.resource.id") != null){
                         i.put("id", info.get("polymart.resource.id"));
@@ -164,7 +272,7 @@ public class UpdateCheck implements Listener{
     private static Map<String, String> jarFileNames = new HashMap<>();
     public static List<String> currentlyDownloading = new ArrayList<>();
 
-    public static void download(String name, String url, int update, Consumer<Boolean> finished){
+    public static void download(String name, String url, int update, String fileName, Consumer<Boolean> finished){
         if(url == null){
             finished.accept(false);
             return;
@@ -183,9 +291,17 @@ public class UpdateCheck implements Listener{
                 //File saveDir = new File(Main.that.getDataFolder(), "updater" + File.separator + "downloads");
                 saveDir.mkdirs();
 
+                String fn = jarFileNames.get(name.toLowerCase());
+                if(fileName != null && !fn.equalsIgnoreCase(fileName) && fileName.length() > 0 && fn.length() > 0 && fileName.endsWith(".jar")){
+                    namesToUpdateYML.set("plugins." + name.toLowerCase() + ".originalFileName", fn);
+                    namesToUpdateYML.set("plugins." + name.toLowerCase() + ".updatedFileName", fileName);
+                    namesToUpdateYML.set("plugins." + name.toLowerCase() + ".time", System.currentTimeMillis() / 1000);
+                    pluginsWithUpdatedNames.add(name);
+                    didUpdateFileNames = true;
+                }
+
                 URL website = new URL(url);
                 ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-                String fn = jarFileNames.get(name.toLowerCase());
                 FileOutputStream fos = new FileOutputStream(new File(saveDir, fn));
                 fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 
@@ -215,7 +331,7 @@ public class UpdateCheck implements Listener{
 
         if(!wrapper.get("success").asBoolean(false)){
             if(wrapper.get("actions").get("sendMessage").isNull()){
-                sendMessage(sender, "It looks like something went wrong while trying to check for updates! Please check your internet connection, and make sure that your host isn't blocking your server from accessing " + ChatColor.YELLOW + "api.polymart.org:80" + ChatColor.WHITE + ".");
+                sendMessage(sender, "It looks like something went wrong while trying to check for updates! Please check your internet connection, and make sure that your host isn't blocking your server from accessing " + ChatColor.YELLOW + "api.polymart.org:443" + ChatColor.WHITE + ".");
             }
             return;
         }
@@ -245,6 +361,7 @@ public class UpdateCheck implements Listener{
                     r.get("uploads").get("latest").get("version").asString(),
                     r.get("resource").get("url").asString(),
                     r.get("resource").get("transferURL").asString(),
+                    r.get("uploads").get("latest").get("fileName").asString(),
                     r.get("uploads").get("latest").get("download").get("url").asString(),
                     r.get("uploads").get("latest").get("description").asString(),
                     r.get("uploads").get("latest").get("id").asInteger(-1),
@@ -400,6 +517,7 @@ public class UpdateCheck implements Listener{
                     r.name,
                     r.download,
                     r.uploadID,
+                    r.fileName,
                     (Boolean b) -> {
                         String oldVersion = oldVersions.get(r.name.toLowerCase());
                         int cv = counter.add();
@@ -525,15 +643,16 @@ public class UpdateCheck implements Listener{
 
 
     private static class UpdateInfo{
-        private String name, version, url, transferURL, download, description;
+        private String name, version, url, transferURL, fileName, download, description;
         private int behind, uploadID;
 
-        public UpdateInfo(String name, String version, String url, String transferURL, String download, String description, int uploadID, int behind){
+        public UpdateInfo(String name, String version, String url, String transferURL, String fileName, String download, String description, int uploadID, int behind){
             this.name = name;
             this.version = version;
             this.url = url;
             this.download = download;
             this.transferURL = transferURL;
+            this.fileName = fileName;
             this.description = description;
             this.uploadID = uploadID;
             this.behind = behind;

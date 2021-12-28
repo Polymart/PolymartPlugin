@@ -4,27 +4,30 @@ import org.bukkit.Bukkit;
 import org.polymart.mcplugin.utils.ServerVersion;
 
 import java.lang.reflect.Constructor;
+import java.util.function.BiFunction;
 
 public enum SafeNBTBaseType{
 
-    STRING(String.class, "String"),
-    DOUBLE(double.class, "Double"),
-    FLOAT(float.class, "Float"),
-    LONG(long.class, "Long"),
-    INT(int.class, "Int"),
-    SHORT(short.class, "Short"),
-    BYTE(byte.class, "Byte"),
-    LONG_ARRAY(long[].class, "LongArray"),
-    INT_ARRAY(int[].class, "IntArray"),
-    BYTE_ARRAY(byte[].class, "ByteArray"),
+    STRING(String.class, SafeNBT::getString, "String"),
+    DOUBLE(double.class, SafeNBT::getDouble,"Double"),
+    FLOAT(float.class, SafeNBT::getFloat, "Float"),
+    LONG(long.class, SafeNBT::getLong, "Long"),
+    INT(int.class, SafeNBT::getInt, "Int"),
+    SHORT(short.class, SafeNBT::getShort, "Short"),
+    BYTE(byte.class, SafeNBT::getByte, "Byte"),
+    //LONG_ARRAY(long[].class, SafeNBT::getLongArray, "LongArray"),
+    INT_ARRAY(int[].class, SafeNBT::getIntArray, "IntArray"),
+    BYTE_ARRAY(byte[].class, SafeNBT::getByteArray, "ByteArray"),
     ;
 
+    private BiFunction<SafeNBT, String, ?> getFunction;
     private Class<?> innerClazz;
     private Class<?> nbtBaseClass;
     private String name;
 
-    <T> SafeNBTBaseType(Class<T> innerClazz, String name){
+    <T> SafeNBTBaseType(Class<T> innerClazz, BiFunction<SafeNBT, String, T> get, String name){
         try{
+            this.getFunction = get;
             this.innerClazz = innerClazz;
             String version = "net.minecraft.server." + Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
             if(ServerVersion.greaterOrEqual(1, 17)){
@@ -36,6 +39,10 @@ public enum SafeNBTBaseType{
             this.name = name;
         }
         catch(Exception ex){ex.printStackTrace();}
+    }
+
+    public Object get(SafeNBT nbt, String key){
+        return getFunction.apply(nbt, key);
     }
 
     public Class<?> getInnerClass(){
@@ -75,4 +82,3 @@ public enum SafeNBTBaseType{
 
 
 }
-

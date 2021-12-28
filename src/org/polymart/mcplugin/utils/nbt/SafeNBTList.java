@@ -9,7 +9,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SafeNBTList{
+public class SafeNBTList {
 
     private static final String version = "net.minecraft.server." + Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
     private static final String cbVersion = "org.bukkit.craftbukkit." + Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
@@ -173,7 +173,13 @@ public class SafeNBTList{
 
     private void add(Object nbt){
         try{
-            Method m = ServerVersion.greaterOrEqual(1, 13) ? tagListClass.getMethod("add", Object.class) : tagListClass.getMethod("add", nbtBaseClass);
+            Method m;
+            if(ServerVersion.greaterOrEqual(1, 18)){
+                m = tagListClass.getMethod("c", Object.class);
+            }
+            else{
+                m = ServerVersion.greaterOrEqual(1, 13) ? tagListClass.getMethod("add", Object.class) : tagListClass.getMethod("add", nbtBaseClass);
+            }
             m.setAccessible(true);
             m.invoke(tagList, nbt);
             m.setAccessible(false);
@@ -199,7 +205,4 @@ public class SafeNBTList{
             ex.printStackTrace();
         }
     }
-
-
 }
-

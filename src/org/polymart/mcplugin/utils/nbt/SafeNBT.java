@@ -1,6 +1,7 @@
 package org.polymart.mcplugin.utils.nbt;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.polymart.mcplugin.Main;
 import org.polymart.mcplugin.utils.ServerVersion;
@@ -39,7 +40,6 @@ public class SafeNBT{
         }
         catch(Exception ex){
             ex.printStackTrace();
-            Bukkit.getPluginManager().disablePlugin(Main.that);
         }
     }
 
@@ -77,6 +77,17 @@ public class SafeNBT{
     }
 
     public SafeNBT getCompound(String key){
+        if(ServerVersion.greaterOrEqual(1, 18)){
+            try{
+                Object o = getObjectRaw(key);
+                return o == null ? null : new SafeNBT(o);
+            }
+            catch(Exception ex){
+                ex.printStackTrace();
+                return null;
+            }
+        }
+
         try{
             Method m = tagCompoundClass.getMethod("getCompound", String.class);
             m.setAccessible(true);
@@ -91,8 +102,9 @@ public class SafeNBT{
     }
 
     public void remove(String key){
+        String name = ServerVersion.greaterOrEqual(1, 18) ? "r" : "remove";
         try{
-            Method m = tagCompoundClass.getMethod("remove", String.class);
+            Method m = tagCompoundClass.getMethod(name, String.class);
             m.setAccessible(true);
             m.invoke(this.tagCompund, key);
             m.setAccessible(false);
@@ -103,6 +115,11 @@ public class SafeNBT{
     }
 
     public void setObject(String key, Object o){
+        if(ServerVersion.greaterOrEqual(1, 18)){
+            NBTEditor.setTag(tagCompund, key, o);
+            return;
+        }
+
         if(o instanceof String){setString(key, (String) o);}
         else if(o instanceof Integer){setInt(key, (Integer) o);}
         else if(o instanceof Double){setDouble(key, (Double) o);}
@@ -129,6 +146,10 @@ public class SafeNBT{
     }
 
     public String getString(String key){
+        if(ServerVersion.greaterOrEqual(1, 18)){
+            return NBTEditor.getString(tagCompund, key);
+        }
+
         try{
             Method m = tagCompoundClass.getMethod("getString", String.class);
             m.setAccessible(true);
@@ -143,6 +164,11 @@ public class SafeNBT{
     }
 
     public void setString(String key, String value){
+        if(ServerVersion.greaterOrEqual(1, 18)){
+            NBTEditor.setTag(tagCompund, key, value);
+            return;
+        }
+
         try{
             Method m = tagCompoundClass.getMethod("setString", String.class, String.class);
             m.setAccessible(true);
@@ -158,7 +184,7 @@ public class SafeNBT{
         Object o;
 
         for(SafeNBTBaseType type : SafeNBTBaseType.values()){
-            o = getObject(key, type);
+            o = type.get(this, key);//getObject(key, type);
             if(o != null){
                 if(type == SafeNBTBaseType.STRING && o.toString().length() == 0){continue;}
                 if(o instanceof Number && ((Number) o).intValue() == 0){
@@ -171,21 +197,25 @@ public class SafeNBT{
         return null;
     }
 
-    public Object getObject(String key, SafeNBTBaseType type){
-        try{
-            Method m = tagCompoundClass.getMethod("get" + type.getName(), String.class);
-            m.setAccessible(true);
-            Object o = m.invoke(this.tagCompund, key);
-            m.setAccessible(false);
-            return o;
-        }
-        catch(Exception ex){
-            ex.printStackTrace();
-        }
-        return null;
-    }
+//    public Object getObject(String key, SafeNBTBaseType type){
+//        try{
+//            Method m = tagCompoundClass.getMethod("get" + type.getName(), String.class);
+//            m.setAccessible(true);
+//            Object o = m.invoke(this.tagCompund, key);
+//            m.setAccessible(false);
+//            return o;
+//        }
+//        catch(Exception ex){
+//            ex.printStackTrace();
+//        }
+//        return null;
+//    }
 
     public Integer getInt(String key){
+        if(ServerVersion.greaterOrEqual(1, 18)){
+            return NBTEditor.getInt(tagCompund, key);
+        }
+
         try{
             Method m = tagCompoundClass.getMethod("getInt", String.class);
             m.setAccessible(true);
@@ -200,6 +230,11 @@ public class SafeNBT{
     }
 
     public void setInt(String key, Integer value){
+        if(ServerVersion.greaterOrEqual(1, 18)){
+            NBTEditor.setTag(tagCompund, key, value);
+            return;
+        }
+
         try{
             Method m = tagCompoundClass.getMethod("setInt", String.class, int.class);
             m.setAccessible(true);
@@ -211,7 +246,125 @@ public class SafeNBT{
         }
     }
 
+//    public long[] getLongArray(String key){
+//        if(ServerVersion.greaterOrEqual(1, 18)){
+//            return NBTEditor.getLongArray(tagCompund, key);
+//        }
+//
+//        try{
+//            Method m = tagCompoundClass.getMethod("getLongArray", String.class);
+//            m.setAccessible(true);
+//            Object r = m.invoke(this.tagCompund, key);
+//            m.setAccessible(false);
+//
+//            return r instanceof long[] ? (long[]) r : null;
+//        }
+//        catch(Exception ex){
+//            ex.printStackTrace();
+//            return null;
+//        }
+//    }
+
+    public int[] getIntArray(String key){
+        if(ServerVersion.greaterOrEqual(1, 18)){
+            return NBTEditor.getIntArray(tagCompund, key);
+        }
+
+        try{
+            Method m = tagCompoundClass.getMethod("getIntArray", String.class);
+            m.setAccessible(true);
+            Object r = m.invoke(this.tagCompund, key);
+            m.setAccessible(false);
+
+            return r instanceof int[] ? (int[]) r : null;
+        }
+        catch(Exception ex){
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
+    public byte[] getByteArray(String key){
+        if(ServerVersion.greaterOrEqual(1, 18)){
+            return NBTEditor.getByteArray(tagCompund, key);
+        }
+
+        try{
+            Method m = tagCompoundClass.getMethod("getByteArray", String.class);
+            m.setAccessible(true);
+            Object r = m.invoke(this.tagCompund, key);
+            m.setAccessible(false);
+
+            return r instanceof byte[] ? (byte[]) r : null;
+        }
+        catch(Exception ex){
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
+    public Byte getByte(String key){
+        if(ServerVersion.greaterOrEqual(1, 18)){
+            return NBTEditor.getByte(tagCompund, key);
+        }
+
+        try{
+            Method m = tagCompoundClass.getMethod("getShort", String.class);
+            m.setAccessible(true);
+            Object r = m.invoke(this.tagCompund, key);
+            m.setAccessible(false);
+
+            return r instanceof Byte ? (Byte) r : null;
+        }
+        catch(Exception ex){
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
+    public Short getShort(String key){
+        if(ServerVersion.greaterOrEqual(1, 18)){
+            return NBTEditor.getShort(tagCompund, key);
+        }
+
+        try{
+            Method m = tagCompoundClass.getMethod("getShort", String.class);
+            m.setAccessible(true);
+            Object r = m.invoke(this.tagCompund, key);
+            m.setAccessible(false);
+
+            return r instanceof Short ? (Short) r : null;
+        }
+        catch(Exception ex){
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
+    public Float getFloat(String key){
+        if(ServerVersion.greaterOrEqual(1, 18)){
+            return NBTEditor.getFloat(tagCompund, key);
+        }
+
+        try{
+            Method m = tagCompoundClass.getMethod("getFloat", String.class);
+            m.setAccessible(true);
+            Object r = m.invoke(this.tagCompund, key);
+            m.setAccessible(false);
+
+            return r instanceof Float ? (Float) r : null;
+        }
+        catch(Exception ex){
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
     public Double getDouble(String key){
+        if(ServerVersion.greaterOrEqual(1, 18)){
+            return NBTEditor.getDouble(tagCompund, key);
+        }
+
         try{
             Method m = tagCompoundClass.getMethod("getDouble", String.class);
             m.setAccessible(true);
@@ -227,6 +380,12 @@ public class SafeNBT{
     }
 
     public void setDouble(String key, Double value){
+        if(ServerVersion.greaterOrEqual(1, 18)){
+            NBTEditor.setTag(tagCompund, key, value);
+            return;
+        }
+
+
         try{
             Method m = tagCompoundClass.getMethod("setDouble", String.class, double.class);
             m.setAccessible(true);
@@ -239,6 +398,10 @@ public class SafeNBT{
     }
 
     public Long getLong(String key){
+        if(ServerVersion.greaterOrEqual(1, 18)){
+            return NBTEditor.getLong(tagCompund, key);
+        }
+
         try{
             Method m = tagCompoundClass.getMethod("getLong", String.class);
             m.setAccessible(true);
@@ -253,6 +416,11 @@ public class SafeNBT{
     }
 
     public void setIntArray(String key, int[] value){
+        if(ServerVersion.greaterOrEqual(1, 18)){
+            NBTEditor.setTag(tagCompund, key, value);
+            return;
+        }
+
         try{
             Method m = tagCompoundClass.getMethod("setIntArray", String.class, int[].class);
             m.setAccessible(true);
@@ -265,6 +433,12 @@ public class SafeNBT{
     }
 
     public void setLong(String key, Long value){
+        if(ServerVersion.greaterOrEqual(1, 18)){
+            NBTEditor.setTag(tagCompund, key, value);
+            return;
+        }
+
+
         try{
             Method m = tagCompoundClass.getMethod("setLong", String.class, long.class);
             m.setAccessible(true);
@@ -276,9 +450,10 @@ public class SafeNBT{
         }
     }
 
-    public SafeNBTList getList(String key){
+    public Object getObjectRaw(String key){
+        String name = ServerVersion.greaterOrEqual(1, 18) ? "c" : "get";
         try{
-            Method m = tagCompoundClass.getMethod("get", String.class);
+            Method m = tagCompoundClass.getMethod(name, String.class);
             m.setAccessible(true);
             Object r = m.invoke(this.tagCompund, key);
             m.setAccessible(false);
@@ -290,7 +465,24 @@ public class SafeNBT{
         }
     }
 
+    public SafeNBTList getList(String key){
+        try{
+            Object r = getObjectRaw(key);
+            return r == null ? null : new SafeNBTList(r);
+        }
+        catch(Exception ex){
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
     public void setShort(String key, Short value){
+        if(ServerVersion.greaterOrEqual(1, 18)){
+            NBTEditor.setTag(tagCompund, key, value);
+            return;
+        }
+
+
         try{
             Method m = tagCompoundClass.getMethod("setShort", String.class, short.class);
             m.setAccessible(true);
@@ -302,7 +494,32 @@ public class SafeNBT{
         }
     }
 
+
+    public Boolean getBoolean(String key){
+        if(ServerVersion.greaterOrEqual(1, 18)){
+            return NBTEditor.getBoolean(tagCompund, key);
+        }
+
+        try{
+            Method m = tagCompoundClass.getMethod("getBoolean", String.class);
+            m.setAccessible(true);
+            Object o = m.invoke(this.tagCompund, key);
+            m.setAccessible(false);
+
+            return o instanceof Boolean ? (Boolean) o : null;
+        }
+        catch(Exception ex){
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
     public void setBoolean(String key, Boolean value){
+        if(ServerVersion.greaterOrEqual(1, 18)){
+            NBTEditor.setTag(tagCompund, key, value);
+            return;
+        }
+
         try{
             Method m = tagCompoundClass.getMethod("setBoolean", String.class, boolean.class);
             m.setAccessible(true);
@@ -314,23 +531,11 @@ public class SafeNBT{
         }
     }
 
-    public boolean getBoolean(String key){
-        try{
-            Method m = tagCompoundClass.getMethod("getBoolean", String.class);
-            m.setAccessible(true);
-            Boolean b = (Boolean) m.invoke(this.tagCompund, key);
-            m.setAccessible(false);
-            return b;
-        }
-        catch(Exception ex){
-            ex.printStackTrace();
-        }
-        return false;
-    }
-
     public void set(String key, SafeNBT value){
+        String name = ServerVersion.greaterOrEqual(1, 18) ? "a" : "set";
+
         try{
-            Method m = tagCompoundClass.getMethod("set", String.class, nbtBaseClass);
+            Method m = tagCompoundClass.getMethod(name, String.class, nbtBaseClass);
             m.setAccessible(true);
             m.invoke(this.tagCompund, key, value.tagCompund);
             m.setAccessible(false);
@@ -341,8 +546,10 @@ public class SafeNBT{
     }
 
     public void set(String key, SafeNBTList value){
+        String name = ServerVersion.greaterOrEqual(1, 18) ? "a" : "set";
+
         try{
-            Method m = tagCompoundClass.getMethod("set", String.class, nbtBaseClass);
+            Method m = tagCompoundClass.getMethod(name, String.class, nbtBaseClass);
             m.setAccessible(true);
             m.invoke(this.tagCompund, key, value.getTagList());
             m.setAccessible(false);
@@ -353,6 +560,11 @@ public class SafeNBT{
     }
 
     public void setStrings(Map<String, String> map){
+        if(ServerVersion.greaterOrEqual(1, 18)){
+            map.forEach((String k, String v) -> NBTEditor.setTag(tagCompund, k, v));
+            return;
+        }
+
         try{
             Method m = tagCompoundClass.getMethod("setString", String.class, String.class);
             m.setAccessible(true);
@@ -371,8 +583,10 @@ public class SafeNBT{
     }
 
     public boolean hasKey(String key){
+        String name = ServerVersion.greaterOrEqual(1, 18) ? "e" : "hasKey";
+
         try{
-            Method m = tagCompoundClass.getMethod("hasKey", String.class);
+            Method m = tagCompoundClass.getMethod(name, String.class);
             m.setAccessible(true);
             Object o = m.invoke(this.tagCompund, key);
             m.setAccessible(false);
@@ -390,13 +604,18 @@ public class SafeNBT{
 //    }
 
     public ItemStack apply(ItemStack item){
+        if(item == null || item.getType() == Material.AIR){return null;}
+
         try{
             Method nmsGet = craftItemstackClass.getMethod("asNMSCopy", ItemStack.class);
             nmsGet.setAccessible(true);
             Object nmsStack = nmsGet.invoke(null, item);
             nmsGet.setAccessible(false);
 
-            Method nbtSet = nmsItemstackClass.getMethod("setTag", tagCompoundClass);
+            if(nmsStack == null){return null;}
+
+            String set = ServerVersion.greaterOrEqual(1, 18) ? "c" : "setTag";
+            Method nbtSet = nmsItemstackClass.getMethod(set, tagCompoundClass);
             nbtSet.setAccessible(true);
             nbtSet.invoke(nmsStack, this.tagCompund);
             nbtSet.setAccessible(false);
@@ -490,7 +709,12 @@ public class SafeNBT{
             Object nmsStack = m.invoke(null, item);
             m.setAccessible(false);
 
-            Method getCompound = nmsItemstackClass.getMethod("getTag");
+            if(item == null || nmsStack == null){
+                return new SafeNBT();
+            }
+
+            String name = ServerVersion.greaterOrEqual(1, 18) ? "s" : "getTag";
+            Method getCompound = nmsItemstackClass.getMethod(name);
             getCompound.setAccessible(true);
             Object nbtCompound = getCompound.invoke(nmsStack);
             getCompound.setAccessible(false);
@@ -498,10 +722,9 @@ public class SafeNBT{
             return new SafeNBT(nbtCompound);
         }
         catch(Exception ex){
-            ex.printStackTrace();
+            //ex.printStackTrace();
             return new SafeNBT();
         }
     }
 
 }
-
