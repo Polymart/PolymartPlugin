@@ -286,23 +286,17 @@ public class UpdateCheck implements Listener{
 
         Main.that.getServer().getScheduler().runTaskAsynchronously(Main.that, () -> {
             boolean success = false;
+            String jarFileName = "";
             try{
                 File saveDir = Bukkit.getUpdateFolderFile();
                 //File saveDir = new File(Main.that.getDataFolder(), "updater" + File.separator + "downloads");
                 saveDir.mkdirs();
 
-                String fn = jarFileNames.get(name.toLowerCase());
-                if(fileName != null && !fn.equalsIgnoreCase(fileName) && fileName.length() > 0 && fn.length() > 0 && fileName.endsWith(".jar")){
-                    namesToUpdateYML.set("plugins." + name.toLowerCase() + ".originalFileName", fn);
-                    namesToUpdateYML.set("plugins." + name.toLowerCase() + ".updatedFileName", fileName);
-                    namesToUpdateYML.set("plugins." + name.toLowerCase() + ".time", System.currentTimeMillis() / 1000);
-                    pluginsWithUpdatedNames.add(name);
-                    didUpdateFileNames = true;
-                }
+                jarFileName = jarFileNames.get(name.toLowerCase());
 
                 URL website = new URL(url);
                 ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-                FileOutputStream fos = new FileOutputStream(new File(saveDir, fn));
+                FileOutputStream fos = new FileOutputStream(new File(saveDir, jarFileName));
                 fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 
                 success = true;
@@ -312,9 +306,21 @@ public class UpdateCheck implements Listener{
             }
             finally{
                 final boolean sv = success;
+                final String fn = jarFileName;
                 Main.that.getServer().getScheduler().runTask(Main.that, () -> {
                     alreadyDownloaded.put(name, update);
                     currentlyDownloading.remove(name);
+
+                    if(sv){
+                        if(fileName != null && !fn.equalsIgnoreCase(fileName) && fileName.length() > 0 && fn.length() > 0 && fileName.endsWith(".jar")){
+                            namesToUpdateYML.set("plugins." + name.toLowerCase() + ".originalFileName", fn);
+                            namesToUpdateYML.set("plugins." + name.toLowerCase() + ".updatedFileName", fileName);
+                            namesToUpdateYML.set("plugins." + name.toLowerCase() + ".time", System.currentTimeMillis() / 1000);
+                            pluginsWithUpdatedNames.add(name);
+                            didUpdateFileNames = true;
+                        }
+                    }
+
                     finished.accept(sv);
                 });
             }
@@ -348,7 +354,7 @@ public class UpdateCheck implements Listener{
         for(JSONWrapper r : polymartResources){
             String status = r.get("status").asString();
 
-            List<UpdateInfo> addTo = new ArrayList<>();
+            List<UpdateInfo> addTo;// = new ArrayList<>();
             if(status == null){continue;}
             addTo = status.equalsIgnoreCase("UP_TO_DATE") || status.equalsIgnoreCase("ON_POLYMART_UP_TO_DATE") ? upToDate : (
                     status.equalsIgnoreCase("UPDATE_AVAILABLE") ? updateAvailable : (
@@ -374,6 +380,11 @@ public class UpdateCheck implements Listener{
 
             addTo.add(ui);
         }
+
+        upToDate.sort(Comparator.comparing((UpdateInfo a) -> a.name));
+        canDownloadFromPolymart.sort(Comparator.comparing((UpdateInfo a) -> a.name));
+        untracked.sort(Comparator.comparing((UpdateInfo a) -> a.name));
+        updateAvailable.sort(Comparator.comparing((UpdateInfo a) -> a.name));
 
         if(sender instanceof Player && forced.length == 0 && updateable.size() > 0){
             stagedForUpdate.clear();
