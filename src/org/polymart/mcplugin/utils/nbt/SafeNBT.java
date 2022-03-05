@@ -165,6 +165,7 @@ public class SafeNBT{
 
     public void setString(String key, String value){
         if(ServerVersion.greaterOrEqual(1, 18)){
+            System.out.println("Setting " + tagCompund + " val " + key + " -> " + value);
             NBTEditor.setTag(tagCompund, key, value);
             return;
         }
@@ -718,6 +719,22 @@ public class SafeNBT{
             getCompound.setAccessible(true);
             Object nbtCompound = getCompound.invoke(nmsStack);
             getCompound.setAccessible(false);
+
+            if(!tagCompoundClass.isInstance(nbtCompound) && ServerVersion.greaterOrEqual(1, 18)){
+                for(Method me : nmsItemstackClass.getMethods()){
+                    if(me.getParameterCount() == 0 && tagCompoundClass.isAssignableFrom(me.getReturnType())){
+                        try{
+                            me.setAccessible(true);
+                            nbtCompound = me.invoke(nmsStack);
+                            me.setAccessible(false);
+                            if(tagCompoundClass.isInstance(nbtCompound)){
+                                break;
+                            }
+                        }
+                        catch(Exception ignore){}
+                    }
+                }
+            }
 
             return new SafeNBT(nbtCompound);
         }
