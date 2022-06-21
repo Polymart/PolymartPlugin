@@ -3,7 +3,7 @@ package org.polymart.mcplugin.utils;
 import org.bukkit.ChatColor;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.polymart.mcplugin.utils.nbt.SafeNBT;
+import org.polymart.mcplugin.utils.nbt.NBTUtils;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -64,10 +64,9 @@ public class Utils{
 
     public static ItemStack newActionStack(XMaterial m, String displayName, ChatColor loreColor, String lore, String action){
         ItemStack is = newStack(m, displayName, loreColor, lore);
-        SafeNBT nbt = SafeNBT.get(is);
-        nbt.setBoolean("org.polymart.mcplugin.watch", true);
-        nbt.setString("org.polymart.mcplugin.action", action);
-        return nbt.apply(is);
+        is = NBTUtils.set(is, "org.polymart.mcplugin.watch", true);
+        is = NBTUtils.set(is, "org.polymart.mcplugin.action", action);
+        return is;
     }
 
     public static String[] splitPreservingWords(String text, int length) {

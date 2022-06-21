@@ -1,5 +1,6 @@
 package org.polymart.mcplugin.actions;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -12,13 +13,12 @@ import org.polymart.mcplugin.Main;
 import org.polymart.mcplugin.Resource;
 import org.polymart.mcplugin.api.PolymartAPIHandler;
 import org.polymart.mcplugin.utils.XMaterial;
-import org.polymart.mcplugin.utils.nbt.SafeNBT;
+import org.polymart.mcplugin.utils.nbt.NBTUtils;
 import org.polymart.mcplugin.utils.JSONWrapper;
 import org.polymart.mcplugin.utils.Utils;
 
 import java.util.*;
 
-import static org.polymart.mcplugin.Main.*;
 import static org.polymart.mcplugin.commands.MessageUtils.sendMessage;
 
 /**
@@ -70,27 +70,23 @@ public class Search implements Listener{
         String priceInfo = !r.canDownload() && r.hasPrice() ? "\n\n" + ChatColor.DARK_GRAY + "(" + r.getPrice() + " " + r.getCurrency() + ")" : "";
 
         ItemStack stack = Utils.newStack(XMaterial.ACACIA_SIGN, itemName, ChatColor.GRAY, r.getSubtitle() + priceInfo);
-        SafeNBT nbt = SafeNBT.get(stack);
-        nbt.setBoolean("org.polymart.mcplugin.watch", true);
-        nbt.setString("org.polymart.mcplugin.action", "open_resource");
-        nbt.setString("org.polymart.mcplugin.resource_id", r.getId());
-
-        return nbt.apply(stack);
+        stack = NBTUtils.set(stack, "org.polymart.mcplugin.watch", true);
+        stack = NBTUtils.set(stack, "org.polymart.mcplugin.action", "open_resource");
+        return NBTUtils.set(stack, "org.polymart.mcplugin.resource_id", r.getId());
     }
 
     @EventHandler
     public void inventoryClick(InventoryClickEvent e){
         ItemStack is = e.getCurrentItem();
         if(is == null){return;}
-        SafeNBT nbt = SafeNBT.get(is);
-        if(!nbt.getBoolean("org.polymart.mcplugin.watch")){return;}
+        if(!NBTUtils.getBoolean(is, "org.polymart.mcplugin.watch")){return;}
         Player p = (Player) e.getWhoClicked();
 
 
-        String action = nbt.getString("org.polymart.mcplugin.action");
+        String action = NBTUtils.get(is, "org.polymart.mcplugin.action", String.class);
         if(!action.equalsIgnoreCase("open_resource")){return;}
 
-        String id = nbt.getString("org.polymart.mcplugin.resource_id");
+        String id = NBTUtils.get(is, "org.polymart.mcplugin.resource_id", String.class);
         Resource r = resources.get(id);
         e.setCancelled(true);
 

@@ -28,9 +28,6 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.Validate;
-import org.apache.commons.lang.WordUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
@@ -1637,7 +1634,6 @@ public enum XMaterial {
      */
     @Nonnull
     public static Optional<XMaterial> matchXMaterial(@Nonnull String name) {
-        Validate.notEmpty(name, "Cannot match a material with null or empty material name");
         Optional<XMaterial> oldMatch = matchXMaterialWithData(name);
         return oldMatch.isPresent() ? oldMatch : matchDefinedXMaterial(format(name), UNKNOWN_DATA_VALUE);
     }
@@ -1666,7 +1662,7 @@ public enum XMaterial {
             String mat = format(name.substring(0, index));
             try {
                 // We don't use Byte.parseByte because we have our own range check.
-                byte data = (byte) Integer.parseInt(StringUtils.deleteWhitespace(name.substring(index + 1)));
+                byte data = (byte) Integer.parseInt(name.substring(index + 1).replaceAll("\\s", ""));
                 return data >= 0 && data < MAX_DATA_VALUE ? matchDefinedXMaterial(mat, data) : matchDefinedXMaterial(mat, UNKNOWN_DATA_VALUE);
             } catch (NumberFormatException ignored) {
                 return matchDefinedXMaterial(mat, UNKNOWN_DATA_VALUE);
@@ -1860,8 +1856,6 @@ public enum XMaterial {
      */
     @Nonnull
     public static String getMajorVersion(@Nonnull String version) {
-        Validate.notEmpty(version, "Cannot get major Minecraft version from null or empty string");
-
         // getVersion()
         int index = version.lastIndexOf("MC:");
         if (index != -1) {
@@ -2023,7 +2017,21 @@ public enum XMaterial {
     @Override
     @Nonnull
     public String toString() {
-        return WordUtils.capitalize(this.name().replace('_', ' ').toLowerCase(Locale.ENGLISH));
+        return capitalizeString(this.name().replace('_', ' ').toLowerCase(Locale.ENGLISH));
+    }
+
+    private static String capitalizeString(String string) {
+        char[] chars = string.toLowerCase().toCharArray();
+        boolean found = false;
+        for (int i = 0; i < chars.length; i++) {
+            if (!found && Character.isLetter(chars[i])) {
+                chars[i] = Character.toUpperCase(chars[i]);
+                found = true;
+            } else if (Character.isWhitespace(chars[i]) || chars[i]=='.' || chars[i]=='\'') { // You can add other chars here
+                found = false;
+            }
+        }
+        return String.valueOf(chars);
     }
 
     /**

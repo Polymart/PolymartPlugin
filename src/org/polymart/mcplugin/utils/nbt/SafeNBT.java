@@ -3,7 +3,6 @@ package org.polymart.mcplugin.utils.nbt;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
-import org.polymart.mcplugin.Main;
 import org.polymart.mcplugin.utils.ServerVersion;
 
 import java.lang.reflect.Field;

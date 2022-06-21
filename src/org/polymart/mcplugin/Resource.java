@@ -19,7 +19,7 @@ public class Resource{
         this.title = json.get("title").asString();
         this.subtitle = json.get("subtitle").asString();
         this.canDownload = json.get("canDownload").asBoolean();
-        this.url = "https://polymart.org/resource/" + Utils.makeURLFriendlyString(this.title) + "." + this.id;
+        this.url = json.get("url").asString("https://polymart.org/resource/" + Utils.makeURLFriendlyString(this.title) + "." + this.id);
         this.price = json.get("price").asString();
         this.currency = json.get("currency").asString();
     }

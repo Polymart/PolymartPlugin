@@ -3,30 +3,23 @@ package org.polymart.mcplugin.actions;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.Hash;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.util.Consumer;
 import org.polymart.mcplugin.Main;
-import org.polymart.mcplugin.Resource;
 import org.polymart.mcplugin.api.PolymartAPIHandler;
-import org.polymart.mcplugin.api.PolymartAccount;
 import org.polymart.mcplugin.text.TextFormatter;
 import org.polymart.mcplugin.utils.JSONWrapper;
 import org.polymart.mcplugin.utils.Utils;
 import org.polymart.mcplugin.utils.XMaterial;
-import org.polymart.mcplugin.utils.nbt.SafeNBT;
+import org.polymart.mcplugin.utils.nbt.NBTUtils;
 
 import java.io.*;
 import java.net.URL;
@@ -36,11 +29,9 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import static org.polymart.mcplugin.commands.MessageUtils.sendMessage;
@@ -591,10 +582,9 @@ public class UpdateCheck implements Listener{
 
     public static ItemStack makeItemStack(XMaterial material, String name, String action, String lore){
         ItemStack stack = Utils.newStack(material, name, ChatColor.WHITE, lore);
-        SafeNBT nbt = SafeNBT.get(stack);
-        nbt.setBoolean("org.polymart.mcplugin.watch", true);
-        nbt.setString("org.polymart.mcplugin.action", action);
-        return nbt.apply(stack);
+        stack = NBTUtils.set(stack, "org.polymart.mcplugin.watch", true);
+        stack = NBTUtils.set(stack, "org.polymart.mcplugin.action", action);
+        return stack;
     }
 
     public static ItemStack makeItemStack(UpdateInfo ui, boolean willUpdate){
@@ -606,12 +596,10 @@ public class UpdateCheck implements Listener{
         lore+=(ui.description == null || ui.description.length() < 3 ? "" : ChatColor.GRAY + ui.description.substring(0, Math.min(ui.description.length(), 200)).replaceAll("\\s+", " ").replaceAll("\\s+$", "") + udle);
         lore+="\n\n" + ChatColor.GRAY.toString() + ChatColor.ITALIC + (!willUpdate ? ChatColor.WHITE + "(click to update)" : "(click to cancel update)");
         ItemStack stack = Utils.newStack(willUpdate ? XMaterial.CYAN_WOOL : XMaterial.ORANGE_WOOL, itemName, ChatColor.GRAY, lore);
-        SafeNBT nbt = SafeNBT.get(stack);
-        nbt.setBoolean("org.polymart.mcplugin.watch", true);
-        nbt.setString("org.polymart.mcplugin.action", "stage_for_update");
-        nbt.setString("org.polymart.mcplugin.resource_name", ui.name);
 
-        return nbt.apply(stack);
+        stack = NBTUtils.set(stack, "org.polymart.mcplugin.watch", true);
+        stack = NBTUtils.set(stack, "org.polymart.mcplugin.action", "stage_for_update");
+        return NBTUtils.set(stack, "org.polymart.mcplugin.resource_name", ui.name);
     }
 
     public static List<String> stagedForUpdate = new ArrayList<>();
@@ -619,13 +607,13 @@ public class UpdateCheck implements Listener{
     public void inventoryClick(InventoryClickEvent e){
         ItemStack is = e.getCurrentItem();
         if(is == null){return;}
-        SafeNBT nbt = SafeNBT.get(is);
-        if(!nbt.getBoolean("org.polymart.mcplugin.watch")){return;}
+        //SafeNBT nbt = SafeNBT.get(is);
+        if(!NBTUtils.getBoolean(is, "org.polymart.mcplugin.watch")){return;}
         Player p = (Player) e.getWhoClicked();
         Inventory inv = e.getInventory();
 
 
-        String action = nbt.getString("org.polymart.mcplugin.action");
+        String action = NBTUtils.get(is, "org.polymart.mcplugin.action", String.class);
         if(action.equalsIgnoreCase("do_updates")){
             doUpdates(p);
             p.closeInventory();
@@ -637,7 +625,7 @@ public class UpdateCheck implements Listener{
         }
         if(!action.equalsIgnoreCase("stage_for_update")){return;}
 
-        String name = nbt.getString("org.polymart.mcplugin.resource_name");
+        String name = NBTUtils.get(is, "org.polymart.mcplugin.resource_name", String.class);
 
         boolean staged = !stagedForUpdate.contains(name.toLowerCase());
         if(staged){
