@@ -16,7 +16,11 @@ import org.polymart.mcplugin.actions.UpdateCheck;
 import org.polymart.mcplugin.api.PolymartAccount;
 import org.polymart.mcplugin.commands.PolymartCommand;
 import org.polymart.mcplugin.commands.UpdateCommand;
+<<<<<<< HEAD
 import org.polymart.mcplugin.hooks.PolymartPlaceholderAPIExpansion;
+=======
+import org.polymart.mcplugin.hooks.PolymartExpansion;
+>>>>>>> aca705e883a4c6aecdb359118db1b3139a7241a5
 import org.polymart.mcplugin.server.UploadServerInfo;
 
 import java.util.*;
@@ -42,8 +46,12 @@ public class Main extends JavaPlugin implements Listener{
         UploadServerInfo.setup();
 
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null){
+<<<<<<< HEAD
             placeholderAPIExpansion = new PolymartPlaceholderAPIExpansion();
             placeholderAPIExpansion.register();
+=======
+            new PolymartExpansion(this).register();
+>>>>>>> aca705e883a4c6aecdb359118db1b3139a7241a5
         }
 
         this.getCommand("polymart").setExecutor(new PolymartCommand());
