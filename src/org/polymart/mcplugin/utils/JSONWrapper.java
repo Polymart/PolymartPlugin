@@ -161,5 +161,10 @@ public class JSONWrapper{
         }
         return result;
     }
+
+    @Override
+    public String toString(){
+        return this.json == null ? (this.value == null ? "null" : this.value.toString()) : this.json.toString();
+    }
 }
 

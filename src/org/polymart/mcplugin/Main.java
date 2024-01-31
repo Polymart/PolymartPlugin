@@ -16,6 +16,7 @@ import org.polymart.mcplugin.actions.UpdateCheck;
 import org.polymart.mcplugin.api.PolymartAccount;
 import org.polymart.mcplugin.commands.PolymartCommand;
 import org.polymart.mcplugin.commands.UpdateCommand;
+import org.polymart.mcplugin.hooks.PolymartPlaceholderAPIExpansion;
 import org.polymart.mcplugin.server.UploadServerInfo;
 
 import java.util.*;
@@ -25,6 +26,7 @@ import static org.polymart.mcplugin.commands.MessageUtils.sendMessage;
 public class Main extends JavaPlugin implements Listener{
 
     public static Main that;
+    private static PolymartPlaceholderAPIExpansion placeholderAPIExpansion;
 
     @Override
     public void onEnable(){
@@ -38,6 +40,11 @@ public class Main extends JavaPlugin implements Listener{
         Search.setup();
         UpdateCheck.setup();
         UploadServerInfo.setup();
+
+        if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null){
+            placeholderAPIExpansion = new PolymartPlaceholderAPIExpansion();
+            placeholderAPIExpansion.register();
+        }
 
         this.getCommand("polymart").setExecutor(new PolymartCommand());
         this.getCommand("update").setExecutor(new UpdateCommand());
@@ -72,6 +79,8 @@ public class Main extends JavaPlugin implements Listener{
     public void onDisable(){
         UpdateCheck.disable();
         PolymartAccount.save();
+
+        placeholderAPIExpansion = null;
 
         that = null;
     }

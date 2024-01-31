@@ -52,7 +52,10 @@ public class Utils{
     }
 
     public static ItemStack newStack(XMaterial m, String displayName, ChatColor loreColor, String lore){
-        ItemStack is = m.parseItem();
+        return newStack(m.parseItem(), displayName, loreColor, lore);
+    }
+
+    public static ItemStack newStack(ItemStack is, String displayName, ChatColor loreColor, String lore){
         ItemMeta im = is.getItemMeta();
         im.setDisplayName(displayName);
         if(lore != null){

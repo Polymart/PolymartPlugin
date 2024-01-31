@@ -10,6 +10,7 @@ public class Resource{
     private String subtitle;
     private String url;
     private String actualURL;
+    private String thumbnailURL;
     private String price;
     private String currency;
     private boolean canDownload;
@@ -20,6 +21,7 @@ public class Resource{
         this.subtitle = json.get("subtitle").asString();
         this.canDownload = json.get("canDownload").asBoolean();
         this.url = json.get("url").asString("https://polymart.org/resource/" + Utils.makeURLFriendlyString(this.title) + "." + this.id);
+        this.url = json.get("thumbnailURL").asString();
         this.price = json.get("price").asString();
         this.currency = json.get("currency").asString();
     }
@@ -47,6 +49,8 @@ public class Resource{
     public String getLongUrl(){
         return actualURL;
     }
+
+    public String getThumbnailURL(){return thumbnailURL;}
 
     public String getPrice(){
         return price;

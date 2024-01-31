@@ -22,6 +22,7 @@ import org.polymart.mcplugin.utils.XMaterial;
 import org.polymart.mcplugin.utils.nbt.NBTUtils;
 
 import java.io.*;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.channels.Channels;
@@ -245,6 +246,7 @@ public class UpdateCheck implements Listener{
         Map<String, Object> send = new HashMap<>();
 
         send.put("resources", resources);
+        send.put("allow_redirects", "true");
 
         // Cache results for 15 seconds
         if(cached != null && (toUpdate.length > 0 || System.currentTimeMillis() - lastCheckedForUpdates < 15000)){
@@ -286,7 +288,9 @@ public class UpdateCheck implements Listener{
                 jarFileName = jarFileNames.get(name.toLowerCase());
 
                 URL website = new URL(url);
-                ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+                HttpURLConnection connection = (HttpURLConnection) website.openConnection();
+                connection.setInstanceFollowRedirects(true);
+                ReadableByteChannel rbc = Channels.newChannel(connection.getInputStream());
                 FileOutputStream fos = new FileOutputStream(new File(saveDir, jarFileName));
                 fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 
@@ -354,7 +358,7 @@ public class UpdateCheck implements Listener{
             );
 
             UpdateInfo ui = new UpdateInfo(
-                    r.get("name").asString(),
+                    r.get("name").asString("ERR_NO_NAME_" + r.get("resource").get("id").asString("?")),
                     r.get("uploads").get("latest").get("version").asString(),
                     r.get("resource").get("url").asString(),
                     r.get("resource").get("transferURL").asString(),

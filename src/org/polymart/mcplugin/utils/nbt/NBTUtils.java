@@ -1,6 +1,5 @@
 package org.polymart.mcplugin.utils.nbt;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
