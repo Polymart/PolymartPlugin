@@ -31,6 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.jar.JarFile;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -377,6 +378,7 @@ public class UpdateCheck implements Listener{
         }
 
         upToDate.sort(Comparator.comparing((UpdateInfo a) -> a.name));
+        canDownloadFromPolymart = canDownloadFromPolymart.stream().filter(Objects::nonNull).collect(Collectors.toList());
         canDownloadFromPolymart.sort(Comparator.comparing((UpdateInfo a) -> a.name));
         untracked.sort(Comparator.comparing((UpdateInfo a) -> a.name));
         updateAvailable.sort(Comparator.comparing((UpdateInfo a) -> a.name));
